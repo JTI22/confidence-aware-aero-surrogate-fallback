@@ -4,7 +4,7 @@ Locked on: 12 Oct 2026
 
 These numbers describe a generic light fixed-wing aircraft. They are not from a real aircraft.
 
-- Wing area: 1 m2
+- Wing area: 0.15 m2
 - Chord: 0.3 m
 - Air density: 1.225 kg/m3 (sea level)
 - Airspeed: 30 m/s (fixed, so only angle of attack changes)
@@ -15,3 +15,5 @@ Formulas:
 - Lift = 0.5 * density * speed^2 * area * CL
 - Drag = 0.5 * density * speed^2 * area * CD
 - Moment = 0.5 * density * speed^2 * area * chord * CM
+
+Pitching moment is switched off in the 6DOF runs (no tail in the model)
