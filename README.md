@@ -21,8 +21,10 @@ All limits and settings were written down and pushed before the tests were run. 
 - Inside Simulink, the GP gave an uncertainty of 0.0006 at 2 degrees and 0.1 at 25 degrees. The fallback switch picked the GP in the first case and the lookup table in the second.
 - In the 6DOF test at 25 degrees (see `docs/screenshots/sixdof_scoring_results.png`):
   - Lookup only (reference): passed all limits.
-  - GP with no guard: failed. Altitude differed by 201.5 m and airspeed by 29.3 percent.
+  - GP with no guard: failed. Altitude differed by 201.5 m and total speed by 29.3 percent.
   - GP with fallback: passed. It matched the reference.
+
+  ![Three 6DOF runs at 25 degrees](docs/screenshots/sixdof_comparison.png)
 
   ## What did not work
 
