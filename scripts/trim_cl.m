@@ -16,6 +16,7 @@ alpha0 = fzero(@(a) trimResidual(a, mach0, q, W), [0 10]);   % degrees
 y  = lookup_predict(alpha0, mach0);
 D  = q * y(2);
 T0 = D / cosd(alpha0);                 % thrust along the body x axis, N
+CM0 = y(3);                            % airfoil pitching moment at trim (balanced by the tail)
 
 theta0 = alpha0 * pi / 180;            % level flight: pitch = angle of attack (rad)
 u0 = V0 * cosd(alpha0);                % starting body velocity, m/s
@@ -26,6 +27,7 @@ fprintf('CL = %.4f, CD = %.5f\n', y(1), y(2));
 fprintf('Lift = %.2f N, Drag = %.3f N, Weight = %.2f N\n', q*y(1), D, W);
 fprintf('Thrust T0 = %.3f N\n', T0);
 fprintf('Start velocity [u0 0 w0] = [%.3f 0 %.3f] m/s, pitch theta0 = %.4f rad\n', u0, w0, theta0);
+fprintf('Trim CM0 = %.5f\n', CM0);
 
 function r = trimResidual(a, mach, q, W)
     y = lookup_predict(a, mach);
