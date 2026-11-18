@@ -1,101 +1,114 @@
 # Confidence-Aware Fallback for a Learned Aerodynamic Surrogate: A Case Study on the NACA 0012 Airfoil
 
-**Status:** in progress. Sections marked *(in progress)* are not finished.
+**Status:** core study complete (Nov 2026). An extension on data sparsity is planned (see "Next").
 
 ## Question
 
 Can a learned aerodynamic model know when not to be trusted, and does its uncertainty give a better trade-off than a simple range rule?
 
+## Main result
+
+In a pre-registered, blind closed-loop fault test (a slow nose-up trim runaway that held the aircraft near stall for about 60 s), the Gaussian Process (GP) alone **lost control** at about 76 s: pitch reached 180 deg and altitude drifted 62.6 m from the truth run. With the **uncertainty gate**, the aircraft stayed under control. Near stall, however, the gate behaved like a simple range rule, and the fallback lookup itself drifted 10.5 m from the truth run, just over the 10 m limit.
+
+![Trim-runaway fault test](docs/screenshots/fault_B_runaway.png)
+
 ## What this project does
 
-- Generates NACA 0012 airfoil data (CL, CD, CM) with XFOIL 6.99, for angles of attack from -5 to 15 degrees and Mach 0 to 0.4 (Reynolds number 1,000,000).
-- Trains Gaussian Process (GP) surrogates from scratch in MATLAB, with no toolbox. Each GP gives a prediction and an uncertainty value.
-- Uses the uncertainty to decide when to trust the GP. If the uncertainty is above a locked threshold, a lookup table built from the same XFOIL data is used instead.
-- Compares this uncertainty gate with a simple range rule in a pre-registered, blind test.
-- Tests the gate inside a closed-loop Simulink 6DOF aircraft model.
+- Generates NACA 0012 data (CL, CD, CM) with XFOIL 6.99 for angles of attack from -5 to 15 deg and Mach 0 to 0.4 (Reynolds number 1,000,000).
+- Trains GP surrogates from scratch in MATLAB, with no toolbox. Each GP gives a prediction and an uncertainty value.
+- Uses the uncertainty to decide when to trust the GP. Above a locked threshold, a lookup table built from the same XFOIL data is used instead.
+- Compares the gate with a simple range rule in a blind offline test.
+- Tests the gate in a closed-loop Simulink 6DOF model with injected faults, scored against a **truth model** built from near-stall XFOIL data (15.5 to 18 deg) that neither the GP nor the lookup was trained on.
 
-All limits, settings and test rules were written down and pushed before each test was run. See the `docs` folder.
+All limits, settings and test rules were written down and pushed before each test was run. See the `docs` folder and the commit history.
 
 ## Results
 
-### 1. GP accuracy and uncertainty (offline)
+### 1. Closed-loop fault tests (docs/fault_test_rules.md, docs/fault_test_output.txt)
 
-- The GP beat a degree-2 polynomial on held-out data (random 80/20 split). CL error was about 12 times smaller.
-- When an early version of the GP was tested on angles it had never seen (12 to 15 degrees), its uncertainty rose with the real error. The correlation was 0.97 to 0.99 for CL and CM.
-- On 29 new near-stall points (15.5 to 18 degrees), the original GP gate (threshold 0.00879) trusted 5 points, all with CL error of 0.1 or less, and refused all 10 points with CL error above 0.1.
+Four runs per test: truth (reference), lookup only, GP only, GP with gate. Limits: pitch within 30 deg, altitude within 10 m and speed within 20% of the truth run.
 
-### 2. Detector test: GP gate vs range rule (pre-registered, blind)
+**Test B: slow trim runaway (blind)**
 
-Rules: `docs/detector_test_rules.md`. Script: `scripts/score_detector.m`. Every test point: `data/detector_test_points.csv`.
+| Mode | Max pitch | Altitude diff | Speed diff | Result |
+|---|---|---|---|---|
+| Truth | 25.1 deg | - | - | Reference (peak angle 16.9 deg, 58.7 s above 15 deg) |
+| Lookup only | 25.8 deg | 10.49 m | 6.9% | Fails altitude (just) |
+| GP only | 179.8 deg | 62.59 m | 90.0% | Loss of control |
+| GP with gate | 26.1 deg | 10.47 m | 7.0% | Fails altitude (just) |
 
-- The GP was trained on a sparse grid (every 2 degrees, Mach 0, 0.2 and 0.4; 32 rows). Its settings were chosen by marginal likelihood on the training rows only.
-- The range rule accepts every point inside -5 to 15 degrees and Mach 0 to 0.4.
+- The gate refused the GP for 58.4 s, exactly while the angle was above 15 deg.
+- Above 15 deg the GP does not know the airfoil stalls. It predicts more lift than the truth (for example CL 1.47 against 1.32 at 17 deg), and over a long stay near stall the error grows until the aircraft departs.
+
+**Test A: gust (realistic case; predicted offline before the run, so not blind)**
+
+Upward 1-cos gust, peak 10 m/s, 0.5 s. All modes pass. Altitude differences: lookup 2.39 m, GP only 2.85 m, gate 2.28 m. The angle stayed above 15 deg for only 0.15 s, so the gust barely tests the models.
+
+![Gust fault test](docs/screenshots/fault_A_gust.png)
+
+### 2. Detector test: GP gate vs range rule, offline, blind (docs/detector_test_rules.md)
+
+GP trained on a sparse grid (32 rows); settings chosen by marginal likelihood on training rows only.
 
 | Test set | Range rule | GP gate |
 |---|---|---|
 | Inside the range (129 points) | Accepted all 129 | Accepted all 129 (same decisions) |
-| Near stall (29 points) | Accepted 0 | Accepted 11: 10 with CL error of 0.1 or less, 1 above (0.1245) |
+| Near stall (29 points) | Accepted 0 | Accepted 11: 10 accurate, 1 with CL error 0.1245 (tolerance 0.1) |
 
-- **Safer?** No. The GP gate accepted one bad CL prediction, and the range rule accepted none.
-- **More useful?** Yes. The GP gate accepted 10 accurate points that the range rule refused.
-- No point inside the range had a CL error above 0.1, so the question "can the GP catch bad points inside the range?" could not be tested.
-- Both methods accepted 5 points inside the range with CD error above 0.01.
-- No validation point had a CL error above 0.1, so the threshold came from the backup rule (the largest validation uncertainty). The validation set was too easy to set a careful threshold.
+The gate gave more coverage but was not safer. No validation point had a large error, so the threshold came from the backup rule.
 
-### 3. Closed-loop 6DOF model
+### 3. Closed-loop model checks
 
-Model: `scripts/aircraft_6dof_cl.slx`.
+- Angle of attack and airspeed come from the aircraft's own velocity. Gravity uses the current attitude.
+- Trim at 30 m/s (angle 5.222 deg, thrust 2.392 N, with airframe drag CD 0.02) flew level.
+- An illustrative tail (restoring moment and damping) was added. A pitch nudge settled, so the model is stable.
+- Finding: the first GP refused itself in normal cruise, because cruise Mach (0.088) lies between the data's Mach lines. A flight GP with separate length scales for angle and Mach fixed this (docs/flight_gp_rules.md).
 
-- The angle of attack and the airspeed are computed from the aircraft's own velocity at every time step. Lift and drag are turned into body axes, and gravity uses the current attitude.
-- A trim script (`scripts/trim_cl.m`) finds steady level flight at 30 m/s: angle of attack 5.235 degrees, thrust 0.732 N. The model flew straight and level for 10 seconds, which checks the force equations.
-- **Finding:** at cruise (Mach 0.088), the original GP gave an uncertainty of 0.0171, about twice its threshold. The gate refused the GP in normal flight. Cruise Mach lies between the data's Mach lines, and the threshold had been set only on points lying on the grid.
-- A separate flight GP (`scripts/make_gp_flight.m`, rules in `docs/flight_gp_rules.md`) uses separate length scales for angle and Mach. Its threshold (0.1055) uses the same rule as the original GP. At cruise, its uncertainty is 0.0102, so the GP is trusted.
+### 4. Earlier offline and open-loop results
 
-### 4. Earlier open-loop 6DOF test
-
-This test used a fixed angle (25 degrees) and a fixed airspeed. It is kept for the record; the closed-loop model above replaces it.
-
-- GP with no guard failed the locked limits (altitude differed by 201.5 m and total speed by 29.3 percent). GP with fallback matched the lookup-only reference.
-
-![Three open-loop 6DOF runs at 25 degrees](docs/screenshots/sixdof_comparison.png)
+- The GP beat a degree-2 polynomial on held-out data (CL error about 12 times smaller; noise setting chosen while looking at the test rows, so treat as an upper estimate).
+- On 29 near-stall points, the original gate trusted 5 points, all accurate, and refused all 10 bad ones.
+- A hole test (10 to 14 deg removed) found no CL error above 0.1, so it could not show a benefit over the range rule.
+- An earlier open-loop 6DOF test with fixed angle and speed is kept for the record (docs/screenshots/sixdof_comparison.png). The closed-loop tests replace it.
 
 ## What did not work
 
-- The GP gate has not been shown to be safer than a range rule. In the detector test it gave more coverage but accepted one bad point.
-- The GP did not predict CD reliably above its training range.
-- The GP uncertainty depends mainly on distance from the training data. It is a warning signal, not a calibrated error bar. In the first extrapolation test, the real error was about 100 times larger than the uncertainty claimed.
-- A threshold tuned on grid points refused the GP in normal cruise (see Results 3).
+- The gate was not shown to be better than a simple range rule, offline or in flight.
+- The fallback is not valid beyond its data. It holds its 15 deg values and drifted past a limit in Test B.
+- The GP uncertainty is a warning signal, not a calibrated error bar (real errors were up to about 100 times larger than claimed in an early test).
+- CD is predicted poorly outside the data. The gate is tuned on CL error only.
 
 ## Limits
 
-- One airfoil (NACA 0012), with XFOIL simulation data only. XFOIL is less reliable near and past stall. One point (17 degrees, Mach 0.3) did not converge.
-- The lookup table is built from the same XFOIL data. It is a bounded default, not a correct answer outside the data.
-- The 12 times improvement over the polynomial used a noise setting chosen while looking at the test rows. Treat it as an upper estimate.
-- Thresholds and error tolerances are placeholders. They are not from a real aircraft specification.
-- The flight GP threshold has not yet been checked on a held-out test set.
-- The aircraft numbers (5 kg, 0.15 m2 wing) are representative values, not a real aircraft.
-- The pitching moment is still switched off in the closed-loop model, so pitch does not change. *(in progress)*
-- The GP runs inside Simulink through an extrinsic MATLAB call. It cannot be turned into code for flight hardware without more work.
+- One airfoil, XFOIL data only. XFOIL is less reliable near and past stall. Truth data stops at 18 deg.
+- Thresholds, tolerances, limits, aircraft numbers (5 kg, 0.15 m2 wing) and the tail model are placeholders, not from a real aircraft.
+- Each fault test was run once.
+- The fault-test script was first stopped by hand before showing any result, because the variable-step solver stalled. It was rerun once with a fixed-step solver (ode4).
+- The flight GP threshold has not been checked on a held-out set.
+- `score_hole.m` and `score_patch.m` computed the input scaling from all rows, including test rows (inputs only, not answers). They were not rerun, because their test sets were already used. The detector test uses training rows only.
+- The GP runs in Simulink through an extrinsic MATLAB call, so it cannot be compiled for flight hardware as it stands.
 
-## Work in progress
+A full list of claims, counter-evidence and untested conditions is in `docs/safety_case.md`.
 
-- Add a simple illustrative tail (restoring moment and pitch damping) and switch the airfoil CM back on.
-- Inject a gust during flight, so the angle of attack leaves the training range, and compare lookup only, GP only and GP with fallback against the locked limits.
-- Write a short safety case: claims, evidence, what was not tested, and remaining risk.
+## Next
+
+Planned extension: find when an uncertainty gate beats a range rule, by adding the range rule as its own flight mode, training on sparse data with gaps inside the envelope, running many fault scenarios rather than one, and comparing with a conformal (calibrated) gate.
 
 ## How to reproduce
 
-Requires MATLAB/Simulink R2025b with Aerospace Blockset. Run from the folder that holds the scripts and data.
+Requires MATLAB/Simulink R2025b with Aerospace Blockset.
 
-1. `make_gp_final` builds the original GP (`gp_final.mat`).
-2. `make_gp_flight` builds the flight GP (`gp_flight.mat`).
+1. Copy `data/naca0012_data.csv` and `data/naca0012_hi_test.csv` into the `scripts` folder, and run everything from there.
+2. `make_gp_final` builds the original GP. `make_gp_flight` builds the flight GP.
 3. `score_detector` runs the detector test.
-4. Open `aircraft_6dof_cl.slx`, set the mode Constant (1 = lookup only, 2 = GP only, 3 = GP with fallback), and press Run. The trim script runs automatically.
+4. `score_faults` runs both fault tests. It opens `aircraft_6dof_cl.slx`, whose trim script (`trim_cl.m`) runs automatically.
+
+`train_gp.m` is an early version kept for history.
 
 ## Repository contents
 
-- `data/` - XFOIL results (`raw/`), the training set `naca0012_data.csv`, the near-stall test set `naca0012_hi_test.csv`, and `detector_test_points.csv`.
+- `data/` - XFOIL results (`raw/`), training set, near-stall test set, detector test points.
 - `scripts/` - MATLAB scripts and Simulink models.
-- `docs/` - locked rules (`safety_limits.md`, `aircraft_assumptions.md`, `hole_test_rules.md`, `detector_test_rules.md`, `flight_gp_rules.md`) and result screenshots.
+- `docs/` - locked test rules, aircraft assumptions, safety case, fault test output and figures.
 
 Built using XFOIL 6.99 (Mark Drela, MIT) and MATLAB/Simulink R2025b.
