@@ -1,0 +1,117 @@
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+A_gust, mode 0 finished (19 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+A_gust, mode 1 finished (8 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+A_gust, mode 2 finished (8 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+A_gust, mode 3 finished (9 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+A_gust, mode 4 finished (8 s)
+
+===== Test A_gust (20 s), compared with the truth run =====
+Repeat check: modes 0-3 match docs/fault_test_output.txt
+Limits: pitch within +-30 deg, altitude within 10 m of truth, airspeed within 20% of truth
+VALIDITY: the truth run went above 18 deg (max 18.16). Truth is outside its data there.
+Mode 0 truth
+  Max pitch 8.6 deg -> PASS | Max altitude diff 0.00 m -> PASS | Max speed diff 0.0 % -> PASS
+  Peak alpha 18.16 deg, time above 15 deg 0.15 s
+Mode 1 lookup only
+  Max pitch 8.4 deg -> PASS | Max altitude diff 2.39 m -> PASS | Max speed diff 1.8 % -> PASS
+  Peak alpha 18.06 deg, time above 15 deg 0.15 s
+Mode 2 GP only
+  Max pitch 8.3 deg -> PASS | Max altitude diff 2.85 m -> PASS | Max speed diff 2.5 % -> PASS
+  Peak alpha 17.89 deg, time above 15 deg 0.15 s
+Mode 3 GP + gate
+  Max pitch 8.4 deg -> PASS | Max altitude diff 2.28 m -> PASS | Max speed diff 1.9 % -> PASS
+  Peak alpha 18.04 deg, time above 15 deg 0.15 s
+Mode 4 range rule
+  Max pitch 8.4 deg -> PASS | Max altitude diff 2.27 m -> PASS | Max speed diff 1.9 % -> PASS
+  Peak alpha 18.04 deg, time above 15 deg 0.15 s
+Gate (mode 3) refused the GP for 0.10 s (0.10 s while alpha > 15 deg)
+Range rule (mode 4) refused the GP for 0.15 s (0.15 s while alpha > 15 deg)
+Refusal time, mode 4 minus mode 3: 0.05 s
+saved range_A_gust.png
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+B_runaway, mode 0 finished (26 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+B_runaway, mode 1 finished (15 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+B_runaway, mode 2 finished (16 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+B_runaway, mode 3 finished (15 s)
+Trim angle of attack: 5.222 deg
+CL = 0.5906, CD airfoil = 0.00880, CD total = 0.02880
+Lift = 48.83 N, Drag = 2.382 N, Weight = 49.05 N
+Thrust T0 = 2.392 N
+Start velocity [u0 0 w0] = [29.876 0 2.730] m/s, pitch theta0 = 0.0911 rad
+Trim CM0 = 0.00075
+B_runaway, mode 4 finished (16 s)
+
+===== Test B_runaway (90 s), compared with the truth run =====
+Repeat check: modes 0-3 match docs/fault_test_output.txt
+Limits: pitch within +-30 deg, altitude within 10 m of truth, airspeed within 20% of truth
+Mode 0 truth
+  Max pitch 25.1 deg -> PASS | Max altitude diff 0.00 m -> PASS | Max speed diff 0.0 % -> PASS
+  Peak alpha 16.94 deg, time above 15 deg 58.67 s
+Mode 1 lookup only
+  Max pitch 25.8 deg -> PASS | Max altitude diff 10.49 m -> FAIL | Max speed diff 6.9 % -> PASS
+  Peak alpha 18.12 deg, time above 15 deg 58.97 s
+Mode 2 GP only
+  Max pitch 179.8 deg -> FAIL | Max altitude diff 62.59 m -> FAIL | Max speed diff 90.0 % -> FAIL
+  Peak alpha 162.82 deg, time above 15 deg 34.75 s
+Mode 3 GP + gate
+  Max pitch 26.1 deg -> PASS | Max altitude diff 10.47 m -> FAIL | Max speed diff 7.0 % -> PASS
+  Peak alpha 18.14 deg, time above 15 deg 58.92 s
+Mode 4 range rule
+  Max pitch 25.9 deg -> PASS | Max altitude diff 10.45 m -> FAIL | Max speed diff 7.0 % -> PASS
+  Peak alpha 18.16 deg, time above 15 deg 58.92 s
+Gate (mode 3) refused the GP for 58.38 s (58.38 s while alpha > 15 deg)
+Range rule (mode 4) refused the GP for 58.92 s (58.92 s while alpha > 15 deg)
+Refusal time, mode 4 minus mode 3: 0.55 s
+saved range_B_runaway.png
