@@ -1,6 +1,6 @@
 # Confidence-Aware Fallback for a Learned Aerodynamic Surrogate: A Case Study on the NACA 0012 Airfoil
 
-**Status:** core study complete (Nov 2026). An extension on data sparsity is planned (see "Next").
+**Status:** core study complete (Nov 2026). Extension in progress, one locked test at a time (see "Next").
 
 ## Question
 
@@ -8,7 +8,7 @@ Can a learned aerodynamic model know when not to be trusted, and does its uncert
 
 ## Main result
 
-In a pre-registered, blind closed-loop fault test (a slow nose-up trim runaway that held the aircraft near stall for about 60 s), the Gaussian Process (GP) alone **lost control** at about 76 s: pitch reached 180 deg and altitude drifted 62.6 m from the truth run. With the **uncertainty gate**, the aircraft stayed under control. Near stall, however, the gate behaved like a simple range rule, and the fallback lookup itself drifted 10.5 m from the truth run, just over the 10 m limit.
+In a pre-registered, blind closed-loop fault test (a slow nose-up trim runaway that held the aircraft near stall for about 60 s), the Gaussian Process (GP) alone **lost control** at about 76 s: pitch reached 180 deg and altitude drifted 62.6 m from the truth run. With the **uncertainty gate**, the aircraft stayed under control. Near stall, however, the gate behaved like a simple range rule, and the fallback lookup itself drifted 10.5 m from the truth run, just over the 10 m limit. A follow-up flight test with the range rule as its own mode confirmed this: the gate and the range rule gave almost the same flight (Result 2).
 
 ![Trim-runaway fault test](docs/screenshots/fault_B_runaway.png)
 
@@ -46,7 +46,21 @@ Upward 1-cos gust, peak 10 m/s, 0.5 s. All modes pass. Altitude differences: loo
 
 ![Gust fault test](docs/screenshots/fault_A_gust.png)
 
-### 2. Detector test: GP gate vs range rule, offline, blind (docs/detector_test_rules.md)
+### 2. Range rule in flight (docs/range_rule_rules.md, docs/range_test_output.txt)
+
+The same two fault tests were run with a fifth mode, the range rule: the GP is used only inside its training data (angle -5 to 15 deg, Mach 0 to 0.4); otherwise the lookup is used. Modes 0 to 3 were run again and matched the earlier numbers exactly.
+
+| Mode | Test A altitude diff | Test B altitude diff | Test B max pitch | GP refused in Test B |
+|---|---|---|---|---|
+| GP with gate | 2.28 m | 10.47 m (fail) | 26.1 deg | 58.38 s |
+| Range rule | 2.27 m | 10.45 m (fail) | 25.9 deg | 58.92 s |
+
+- With dense training data, the gate gave no benefit over the range rule. The two switched within 0.6 s of each other.
+- Both failed Test B by about the same margin as the lookup alone (10.49 m). Near stall, the quality of the fallback decided the result, not the switching rule.
+
+![Range rule test, trim runaway](docs/screenshots/range_B_runaway.png)
+
+### 3. Detector test: GP gate vs range rule, offline, blind (docs/detector_test_rules.md)
 
 GP trained on a sparse grid (32 rows); settings chosen by marginal likelihood on training rows only.
 
@@ -57,14 +71,14 @@ GP trained on a sparse grid (32 rows); settings chosen by marginal likelihood on
 
 The gate gave more coverage but was not safer. No validation point had a large error, so the threshold came from the backup rule.
 
-### 3. Closed-loop model checks
+### 4. Closed-loop model checks
 
 - Angle of attack and airspeed come from the aircraft's own velocity. Gravity uses the current attitude.
 - Trim at 30 m/s (angle 5.222 deg, thrust 2.392 N, with airframe drag CD 0.02) flew level.
 - An illustrative tail (restoring moment and damping) was added. A pitch nudge settled, so the model is stable.
 - Finding: the first GP refused itself in normal cruise, because cruise Mach (0.088) lies between the data's Mach lines. A flight GP with separate length scales for angle and Mach fixed this (docs/flight_gp_rules.md).
 
-### 4. Earlier offline and open-loop results
+### 5. Earlier offline and open-loop results
 
 - The GP beat a degree-2 polynomial on held-out data (CL error about 12 times smaller; noise setting chosen while looking at the test rows, so treat as an upper estimate).
 - On 29 near-stall points, the original gate trusted 5 points, all accurate, and refused all 10 bad ones.
@@ -73,7 +87,7 @@ The gate gave more coverage but was not safer. No validation point had a large e
 
 ## What did not work
 
-- The gate was not shown to be better than a simple range rule, offline or in flight.
+- The gate was not shown to be better than a simple range rule, offline or in flight. In flight, the range rule gave the same result (Result 2).
 - The fallback is not valid beyond its data. It holds its 15 deg values and drifted past a limit in Test B.
 - The GP uncertainty is a warning signal, not a calibrated error bar (real errors were up to about 100 times larger than claimed in an early test).
 - CD is predicted poorly outside the data. The gate is tuned on CL error only.
@@ -92,7 +106,17 @@ A full list of claims, counter-evidence and untested conditions is in `docs/safe
 
 ## Next
 
-Planned extension: find when an uncertainty gate beats a range rule, by adding the range rule as its own flight mode, training on sparse data with gaps inside the envelope, running many fault scenarios rather than one, and comparing with a conformal (calibrated) gate.
+Extension: find when an uncertainty gate beats a range rule, and what makes the fallback safe. Each step has its own locked rules.
+
+1. Range rule as its own flight mode (done, Result 2).
+2. Smooth blend between the GP and the lookup instead of a hard switch.
+3. Switching back with two thresholds, and counting switches.
+4. An alarm based on uncertainty added up over time.
+5. A conformal (calibrated) threshold.
+6. A physics-based post-stall fallback.
+7. Many random fault runs instead of one.
+8. Sparse training data with gaps inside the envelope.
+9. A gate that weighs uncertainty by its likely effect on the flight.
 
 ## How to reproduce
 
@@ -102,6 +126,7 @@ Requires MATLAB/Simulink R2025b with Aerospace Blockset.
 2. `make_gp_final` builds the original GP. `make_gp_flight` builds the flight GP.
 3. `score_detector` runs the detector test.
 4. `score_faults` runs both fault tests. It opens `aircraft_6dof_cl.slx`, whose trim script (`trim_cl.m`) runs automatically.
+5. `score_range` runs both fault tests again with the range rule added (mode 4).
 
 `train_gp.m` is an early version kept for history.
 
